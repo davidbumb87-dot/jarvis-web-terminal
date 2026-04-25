@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>J.A.R.V.I.S. Web Terminal</title>
+    <style>
+        body {
+            background-color: #0c0c0c;
+            color: #cccccc;
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #terminal {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .line {
+            margin-bottom: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .input-line {
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .output-line {
+            color: #cccccc;
+        }
+        .suggestion-bar {
+            background-color: #1e1e1e;
+            padding: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            border-top: 1px solid #333;
+        }
+        .suggestion {
+            background-color: #333;
+            color: #00D1FF;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #0c0c0c;
+        }
+        .prompt {
+            color: #ffffff;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal">
+        <div class="line output-line">Windows PowerShell</div>
+        <div class="line output-line">Copyright (C) Microsoft Corporation. All rights reserved.</div>
+        <div class="line output-line">Running in Administrator mode...</div>
+    </div>
+    <div id="suggestion-bar" class="suggestion-bar"></div>
+    <div class="input-container">
+        <span class="prompt">PS C:\WINDOWS\system32></span>
+        <input type="text" id="command-input" autofocus autocomplete="off">
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const input = document.getElementById('command-input');
+        const suggestionBar = document.getElementById('suggestion-bar');
+        const prompt = 'PS C:\\WINDOWS\\system32> ';
+        const database = ['Get-Process', 'tasklist', 'ipconfig', 'sfc /scannow', 'Get-Service', 'dir', 'ls', 'whoami', 'netstat', 'systeminfo', 'ping', 'cls', 'clear', 'help', 'scan'];
+
+        function addLine(text, type = 'output') {
+            const line = document.createElement('div');
+            line.className = 'line ' + (type === 'input' ? 'input-line' : 'output-line');
+            line.textContent = (type === 'input' ? prompt : '') + text;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function handleCommand(cmd) {
+            const command = cmd.trim().toLowerCase();
+            addLine(cmd, 'input');
+
+            let output = '';
+            if (command === 'help') {
+                output = 'Available commands: help, clear, status, whoami, version, scan, ipconfig, Get-Process';
+            } else if (command === 'ipconfig') {
+                output = 'Windows IP Configuration\n\nEthernet adapter Ethernet:\n   IPv4 Address. . . . . . . . . . . : 192.168.1.105\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1';
+            } else if (command === 'get-process' || command === 'tasklist') {
+                output = 'Image Name                     PID Session Name        Mem Usage\n========================= ======== ================ ===========\nSystem Idle Process              0 Services                   8 K\nSystem                           4 Services                 136 K\njarvis_core.exe               2048 Console               45,212 K';
+            } else if (command === 'whoami') {
+                output = 'desktop-jarvis\\administrator (David)';
+            } else if (command === 'scan') {
+                output = 'Scanning local network... No threats detected. All systems green.';
+            } else if (command === 'cls' || command === 'clear') {
+                terminal.innerHTML = '';
+                return;
+            } else if (command !== '') {
+                output = `'${cmd}' is not recognized as an internal or external command, operable program or batch file.`;
+            }
+
+            if (output) {
+                const response = "sono J.A.R.V.I.S. l'assistente di David\n" + output;
+                addLine(response);
+            }
+        }
+
+        input.addEventListener('input', () => {
+            const val = input.value.toLowerCase();
+            suggestionBar.innerHTML = '';
+            if (val) {
+                const filtered = database.filter(c => c.toLowerCase().startsWith(val));
+                filtered.forEach(c => {
+                    const span = document.createElement('span');
+                    span.className = 'suggestion';
+                    span.textContent = c;
+                    span.onclick = () => {
+                        input.value = c;
+                        suggestionBar.innerHTML = '';
+                        input.focus();
+                    };
+                    suggestionBar.appendChild(span);
+                });
+            }
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleCommand(input.value);
+                input.value = '';
+                suggestionBar.innerHTML = '';
+            }
+        });
+
+        // Focus input on body click
+        document.body.onclick = () => input.focus();
+    </script>
+</body>
+</html>
